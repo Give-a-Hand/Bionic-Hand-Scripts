@@ -1,4 +1,4 @@
-void setup()
+/** void setup()
 {
   Serial.begin(115200);
   while (!Serial); // optionally wait for serial terminal to open
@@ -10,3 +10,4 @@ void loop()
   Serial.println(sensorValue); // print out the value you read
   delay(50); // to avoid overloading the serial terminal
 }
+**/
