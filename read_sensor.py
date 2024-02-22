@@ -3,9 +3,9 @@ from time import time
 import serial
 
 # Your serial port might be different!
-ser = serial.Serial('com3', timeout=1)
+ser = serial.Serial('/dev/cu.usbserial-14110', timeout=1)
 print(ser)
-f = open("df.csv", "a+", newline='')
+f = open("ks.csv", "a+", newline='')
 writer = csv.writer(f, delimiter=',')
 while True:
     s = ser.readline().decode()
