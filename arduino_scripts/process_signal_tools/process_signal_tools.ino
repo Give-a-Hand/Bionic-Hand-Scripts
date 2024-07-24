@@ -95,7 +95,7 @@ void spinMotor(int motorSpeed)                       //function for driving the 
   {
     digitalWrite(AIN1, HIGH);                         //set pin 1 to high
     digitalWrite(AIN2, LOW);                          //set pin 2 to low
-    delay(1000);
+    delay(1500);
     digitalWrite(AIN1, LOW);                          //set pin 1 to low
     digitalWrite(AIN2, LOW);                          //set pin 2 to low
     
@@ -104,10 +104,11 @@ void spinMotor(int motorSpeed)                       //function for driving the 
   {
     digitalWrite(AIN1, LOW);                          //set pin 1 to low
     digitalWrite(AIN2, HIGH);                         //set pin 2 to high
-    delay(1000);
+    delay(500);
     digitalWrite(AIN1, LOW);                          //set pin 1 to low
     digitalWrite(AIN2, LOW);                          //set pin 2 to low
   }
   
+  delay(100);
   analogWrite(PWMA, abs(motorSpeed));                 //now that the motor direction is set, drive it at the entered speed
 }
