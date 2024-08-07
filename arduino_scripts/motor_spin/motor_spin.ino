@@ -1,5 +1,6 @@
 // Initializing the array for first deriv of sliding window of 20 datapoints
 int count = 0;
+bool state = 0;
 
 int motorSpeed = 255;  
 
@@ -23,32 +24,33 @@ void loop() {
   pinMode(BUTTON, INPUT); // button input
 
   if (digitalRead(BUTTON) == HIGH) {
-    //Serial.println(pressed);
-    //Serial.print("count: ");
-    //Serial.println(count);
-
+    state = 1;
     if (count % 2 == 1) {
-      Serial.println("CLENCH: CW");
-      spinMotor(motorSpeed);
-      //Serial.print("loop 1 - count: ");
-      //Serial.println(count);
+      Serial.println("Spin!");
+      digitalWrite(AIN1, LOW);                         //set pin 1 to high
+      digitalWrite(AIN2, HIGH);  
+      analogWrite(PWMA, abs(motorSpeed));                        //set pin 2 to lo
     }
-    
-    if (count % 2 == 0) {
-      Serial.println("UNCLENCH: CCW");
-      spinMotor(-motorSpeed);
-      //Serial.print("loop 2 - count: ");
-      //Serial.println(count);
+    else {
+      Serial.println("Spin!");
+      digitalWrite(AIN1, HIGH);                         //set pin 1 to high
+      digitalWrite(AIN2, LOW);  
+      analogWrite(PWMA, abs(motorSpeed));
     }
-
-    count++;
-    //Serial.println("restart loops");
+  }
+  else {
+    if (state == 1) {
+      count ++;
+    }
+    state = 0;
+    Serial.println("Unpress");
+  digitalWrite(AIN1, LOW);                          //set pin 1 to low
+  digitalWrite(AIN2, LOW);   
+  }
+                         //set pin 2 to low
 
     pinMode(BUTTON, OUTPUT); // button output
     digitalWrite(BUTTON, LOW); // ground the button
-
-
-  }
 
   delay(100);
   
@@ -77,5 +79,5 @@ void spinMotor(int motorSpeed)                       //function for driving the 
   }
   
   delay(100);
-  analogWrite(PWMA, abs(motorSpeed));                 //now that the motor direction is set, drive it at the entered speed
+                   //now that the motor direction is set, drive it at the entered speed
 }
