@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 
 
 # Read CSV file into pandas DataFrame
-df = pd.read_csv('lk_pressed.csv')
+csv_file = "..."
+df = pd.read_csv(csv_file)
 
 df = df.groupby('Time').mean()
 
