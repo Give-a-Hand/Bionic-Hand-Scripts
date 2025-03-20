@@ -12,5 +12,5 @@ void loop()
   // Serial.print(0);
   // Serial.print(", ");
   Serial.println(sensorValue); // print out the value you read
-  delay(50); // to avoid overloading the serial terminal
+  delay(25); // to avoid overloading the serial terminal
 }

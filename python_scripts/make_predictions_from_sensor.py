@@ -1,17 +1,18 @@
 from collections import deque
 import numpy as np
 import serial
+import time
+ser = serial.Serial("com3")
 
-ser = serial.Serial("com4")
-
-window_size = 150
-raw_signal = deque(maxlen=200)
+window_size = 10
+raw_signal = deque(maxlen=150)
 normalized_signal = deque(maxlen=window_size)
 
 # Extract features from window size
 def feature_extraction(arr):
     arr = np.array(list(arr))
     mean = np.mean(arr)
+    arr_min = np.min(arr)
     arr_max = np.max(arr)
     percentile = np.percentile(arr, 20)
     std = np.std(arr)
@@ -19,6 +20,7 @@ def feature_extraction(arr):
     features = []   
     features.append(mean)                 # Mean
     features.append(arr_max)              # Max
+    features.append(arr_min)              # Min
     features.append(max(arr) - min(arr))  # Range
     features.append(arr[-1])              # Last Value
     features.append(arr[-2])              # Second to last value
@@ -36,7 +38,8 @@ def feature_extraction(arr):
 
     ###stdiff
     difference = np.diff(arr)
-    features.append(difference)
+    std = np.std(difference)
+    features.append(std)
 
     return features
 
@@ -45,11 +48,11 @@ def model_predict(features):
     # Weights were pulled from logistic regression model
     weights = [1.1168033,  -0.39353045, -0.51548955,  0.1219591,   1.58287895,  0.50244405, 1.61716643,  0.5224903,  -0.69309384,  3.79517261]
     prediction = 0.3398020130182364
-
-    for w, f in zip(weights, features):
-        prediction += w * f
     
-    return np.round(prediction, 0)
+    for w, f in zip(weights, features):
+        prediction += (w * f)
+    
+    return  1 / (1 + np.exp(-prediction))
 
 ### TODO: Figure out if raw signal queue also needs to be cleared after a prediction is made
 ###       There might be a significant gap in the data collected in the raw signal because of the 
@@ -58,9 +61,13 @@ def model_predict(features):
 
 while True:
     # Read the line from arduino
-    s = ser.readline().decode("utf-8")
+    s = ser.readline().decode("utf-8", errors='ignore')
     if s != "":
-        signal_value = float(str(s).replace("\n", ""))
+        try:
+            signal_value = float(str(s).replace("\n", ""))
+        except Exception:
+            print("Throw zero")
+            signal_value = 0
         normalized_value = None
 
         # Need to make sure we have enough data to normalize
@@ -86,9 +93,14 @@ while True:
                 features = feature_extraction(normalized_signal)
                 prediction = model_predict(features)
                 print(prediction)
+                if prediction < .5:
+                    print("Open")
+                else:
+                    print("Close")
 
                 # Clear the queue (we only want to make predictions every so often)
                 normalized_signal.clear()
+                raw_signal.clear()
             
             elif normalized_value:
                 normalized_signal.append(normalized_value)
