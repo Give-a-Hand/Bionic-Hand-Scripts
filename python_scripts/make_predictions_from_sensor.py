@@ -5,8 +5,10 @@ import time
 ser = serial.Serial("com3")
 
 window_size = 10
-raw_signal = deque(maxlen=150)
 normalized_signal = deque(maxlen=window_size)
+
+CALLIBRATED_MEAN = 57.9890350877193
+CALLIBRATED_STD = 29.85482950349875
 
 # Extract features from window size
 def feature_extraction(arr):
@@ -46,17 +48,13 @@ def feature_extraction(arr):
 # Make a prediction (1 is open, 0 is closed)
 def model_predict(features):
     # Weights were pulled from logistic regression model
-    weights = [1.1168033,  -0.39353045, -0.51548955,  0.1219591,   1.58287895,  0.50244405, 1.61716643,  0.5224903,  -0.69309384,  3.79517261]
-    prediction = 0.3398020130182364
+    weights =  [ 1.30081864, -0.07603121,  0.06451631, -0.14054752,  1.68810808,  0.63655892, 0.89873033,  0.41659686, -0.58041178,  2.24831185]
+    prediction =.9908183563050299 
     
     for w, f in zip(weights, features):
         prediction += (w * f)
     
     return  1 / (1 + np.exp(-prediction))
-
-### TODO: Figure out if raw signal queue also needs to be cleared after a prediction is made
-###       There might be a significant gap in the data collected in the raw signal because of the 
-###       time it takes to make a prediction
 
 
 while True:
@@ -68,40 +66,28 @@ while True:
         except Exception:
             print("Throw zero")
             signal_value = 0
-        normalized_value = None
-
-        # Need to make sure we have enough data to normalize
-        if len(raw_signal) == raw_signal.maxlen:
-            # Generate normalized value from raw signals
-            normalized_value = (signal_value - np.mean(list(raw_signal))) / np.std(list(raw_signal)) if np.std(list(raw_signal)) != 0 else 0
-            
-            # Add new value to circular queue
-            raw_signal.pop()
-            raw_signal.rotate(-1)
-            raw_signal.append(signal_value)
-        else:
-            raw_signal.append(signal_value)
         
-        if normalized_value:
-            # Need to make sure we have enough data to make a prediction (the window size)
-            if len(normalized_signal) == window_size:
-                normalized_signal.pop()
-                normalized_signal.rotate(-1)
-                normalized_signal.append(normalized_value)
-                
-                # Make prediction
-                features = feature_extraction(normalized_signal)
-                prediction = model_predict(features)
-                print(prediction)
-                if prediction < .5:
-                    print("Open")
-                else:
-                    print("Close")
+        normalized_value = (signal_value - CALLIBRATED_MEAN) / CALLIBRATED_STD
 
-                # Clear the queue (we only want to make predictions every so often)
-                normalized_signal.clear()
-                raw_signal.clear()
+        # Need to make sure we have enough data to make a prediction (the window size)
+        if len(normalized_signal) == window_size:
+            normalized_signal.pop()
+            normalized_signal.rotate(-1)
+            normalized_signal.append(normalized_value)
             
-            elif normalized_value:
-                normalized_signal.append(normalized_value)
+            # Make prediction
+            features = feature_extraction(normalized_signal)
+            prediction = model_predict(features)
+            if prediction < .5:
+                print(f"Open \t\t ({prediction})")
+            else:
+                print(f"Close \t\t ({prediction})")
 
+            # Clear the queue (we only want to make predictions every so often)
+            normalized_signal.clear()
+        
+        elif normalized_value:
+            normalized_signal.append(normalized_value)
+
+    else:
+        print("delay")
