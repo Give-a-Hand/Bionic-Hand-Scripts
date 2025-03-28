@@ -57,6 +57,8 @@ def model_predict(features):
     return  1 / (1 + np.exp(-prediction))
 
 
+callibrating_complete = False
+callibration_list = []
 while True:
     # Read the line from arduino
     s = ser.readline().decode("utf-8", errors='ignore')
@@ -67,27 +69,42 @@ while True:
             print("Throw zero")
             signal_value = 0
         
-        normalized_value = (signal_value - CALLIBRATED_MEAN) / CALLIBRATED_STD
 
-        # Need to make sure we have enough data to make a prediction (the window size)
-        if len(normalized_signal) == window_size:
-            normalized_signal.pop()
-            normalized_signal.rotate(-1)
-            normalized_signal.append(normalized_value)
-            
-            # Make prediction
-            features = feature_extraction(normalized_signal)
-            prediction = model_predict(features)
-            if prediction < .5:
-                print(f"Open \t\t ({prediction})")
+        if not callibrating_complete:
+            if len(callibration_list) < 750:
+                print("Please keep your hand open")
+                callibration_list.append(signal_value)
+            elif 1500 >= len(callibration_list) >= 750:
+                print("Please keep your hand closed")
+                callibration_list.append(signal_value)
             else:
-                print(f"Close \t\t ({prediction})")
+                print("FINISHED CALLIBRATION")
+                callibrating_complete = True
+                CALLIBRATED_MEAN = np.mean(callibration_list)
+                CALLIBRATED_STD = np.std(callibration_list)
 
-            # Clear the queue (we only want to make predictions every so often)
-            normalized_signal.clear()
-        
-        elif normalized_value:
-            normalized_signal.append(normalized_value)
+        else:
+            normalized_value = (signal_value - CALLIBRATED_MEAN) / CALLIBRATED_STD
+
+            # Need to make sure we have enough data to make a prediction (the window size)
+            if len(normalized_signal) == window_size:
+                normalized_signal.pop()
+                normalized_signal.rotate(-1)
+                normalized_signal.append(normalized_value)
+                
+                # Make prediction
+                features = feature_extraction(normalized_signal)
+                prediction = model_predict(features)
+                if prediction < .5:
+                    print(f"Open \t\t ({prediction})")
+                else:
+                    print(f"Close \t\t ({prediction})")
+
+                # Clear the queue (we only want to make predictions every so often)
+                normalized_signal.clear()
+            
+            elif normalized_value:
+                normalized_signal.append(normalized_value)
 
     else:
         print("delay")
