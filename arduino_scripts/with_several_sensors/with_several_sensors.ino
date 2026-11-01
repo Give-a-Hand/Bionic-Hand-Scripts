@@ -16,7 +16,7 @@ void setup() {
 
 void loop() {
   
-  Serial.print(analogRead(A0));
+  Serial.print(analogRead(A4));
   Serial.print(",");
 
   Serial.println(micros() - startTime);
